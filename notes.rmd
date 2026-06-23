@@ -1,4 +1,14 @@
+---
+title: "Moje Poznámky"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```{r, message=FALSE, warnings=FALSE}
 library(dplyr)
 library(ggplot2)
 library(tidyr)
 library(stringr)
+```
