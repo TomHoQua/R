@@ -14,7 +14,24 @@ library(tidyr)
 library(stringr)
 ```
 
-#Korelace a regrese:
+# Statistika:
+```{r}
+df <- read.csv("StudentsPerformance.csv")
+avg <- mean(df$math.score)
+
+# v <- 1:length(df$math.score)
+# for(i in 1:length(df$math.score)){
+#   v[i] <- abs(mean(sample(df$math.score,i))-avg)
+# }
+# plot(1:length(df$math.score),v,type = "l",xlab = "počet vzorků",ylab="střední hodnota")
+
+i <- 1:nrow(df)
+avg <- mean(df$math.score)
+y <- sapply(i,function(n) abs(mean(dplyr::slice_sample(df,n=n)$math.score)-avg))
+plot(i,y, type = "l",xlab = "počet vzorků",ylab="střední hodnota")
+```
+
+# Korelace a regrese:
 ```{r}
 df <- read.csv("StudentsPerformance.csv")
 model1 <- lm(df$reading.score ~ df$math.score)
