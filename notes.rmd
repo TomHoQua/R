@@ -13,3 +13,22 @@ library(ggplot2)
 library(tidyr)
 library(stringr)
 ```
+
+#Korelace a regrese:
+```{r}
+df <- read.csv("StudentsPerformance.csv")
+model1 <- lm(df$reading.score ~ df$math.score)
+model2 <- lm(df$writing.score ~ df$math.score)
+par(mfrow = c(1, 2))
+
+plot(df$math.score, df$reading.score, xlab="math score", ylab ="reading score",
+     main = paste("Pearson=",round(cor(df$reading.score,df$math.score),5),
+     "\nSpearman=",round(cor(df$reading.score,df$math.score,method = "spearman"),5)))
+abline(model1, col="blue")
+plot(df$math.score, df$writing.score, xlab="math score", ylab ="writing score",
+     main = paste("Pearson=",round(cor(df$writing.score,df$math.score),5),
+     "\nSpearman=",round(cor(df$writing.score,df$math.score,method = "spearman"),5)))
+```
+
+
+abline(model2, col="blue")
