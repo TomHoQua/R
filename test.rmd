@@ -1,0 +1,157 @@
+---
+title: "sondy"
+output: html_document
+date: "2026-06-23"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r,message=FALSE,warning=FALSE}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(stringr)
+```
+
+```{r}
+land <- read.csv("landings.csv",header = TRUE, na.strings = c("","NA"))
+targ <- read.csv("targets.csv",header = TRUE, na.strings = c("","NA"))
+prob <- read.csv("probes.csv",header = TRUE, na.strings = c("","NA"))
+launc <- read.csv("launches.csv",header = TRUE, na.strings = c("","NA"))
+org <- read.csv("organizations.csv",header = TRUE, na.strings = c("","NA"))
+
+dfprobtag <- left_join(prob,targ, by="target_id")
+```
+# Úkol 1: Přehlad misí podle cílového ťelesa a typu misu
+- tabulka počtu sond podle cílové oblasti
+```{r, message=FALSE, warning=FALSE}
+dfprobtag%>%
+  group_by(target_class)%>% 
+  summarize(total = n())%>%
+  arrange(desc(total)) -> pocetsond_oblast
+
+knitr::kable(pocetsond_oblast)
+```
+
+- Tabulka počtu sond podle cílové oblasti a typu mise
+
+```{r, message=FALSE, warning=FALSE}
+dfprobtag %>% 
+  group_by(target_class, target_type) %>% 
+  summarize(total = n(), .groups = "drop") %>% 
+  arrange(target_class, desc(total)) -> pocetsond_detail
+
+knitr::kable(pocetsond_detail)
+```
+----
+Tabulka...
+----------------------------------------------------------
+```{r, message=FALSE,warning=FALSE}
+ggplot(data = pocetsond_oblast, aes(x = target_class, y = total)) +
+  geom_col() +
+  theme_minimal() +
+  labs(
+    title = "Počet kosmických sond podle cílové oblasti",
+    x = "Cílová oblast",
+    y = "Celkový počet sond"
+  ) +
+  theme(legend.position = "none")
+
+```
+----
+-
+- Oblasti Moon a Sun/ Heliocentric jsou nejčastější  
+
+----
+# 2 Úkol
+
+```{r}
+dfagentury <- prob %>% left_join(org, by= c("owner_code" = "org_code")) %>% 
+  left_join(launc, by = "launch_id")
+```
+ 
+
+```{r}
+tabulka_pocet_sond <- dfagentury %>% 
+  filter(!is.na(owner_code)) %>% 
+  group_by(owner_code) %>% 
+  summarise(total_sond = n(), .groups = "drop") %>% 
+  arrange(desc(total_sond))
+
+knitr::kable(tabulka_pocet_sond)
+```
+
+
+```{r}
+tabulka_uspenosti <- dfagentury %>% 
+  filter(!is.na(owner_code)) %>% 
+  group_by(owner_code) %>% 
+  summarise(
+    total_sond = n(),
+
+    podil_uspesnych = mean(launch_result_simple == "success", na.rm = TRUE),
+    .groups = "drop"
+  ) %>% 
+  filter(total_sond >= 5) %>% 
+  arrange(desc(podil_uspesnych))
+
+knitr::kable(tabulka_uspenosti)
+```
+
+
+```{r}
+top_organizace <- head(tabulka_pocet_sond, 10)
+
+ggplot(top_organizace, aes(x = reorder(owner_code, -total_sond),y =total_sond))+
+  geom_col(fill="steelblue")+
+  theme_minimal()+
+  labs(title="Top 10 organizací podle počtu sond", x="Organizace",y="Počet sond")
+```
+
+```{r}
+ggplot(tabulka_uspenosti, aes(x = reorder(owner_code, -podil_uspesnych), y = podil_uspesnych, fill = owner_code)) +
+  geom_col() +
+  theme_minimal() +
+  labs(title = "Úspěšnost startů (min. 5 sond)", x = "Organizace", y = "Podíl úspěšných startů") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) # Otočí popisky osy x
+```
+
+- yappity yap yap
+
+# Úkol 3
+```{r}
+kontigecni_tabulka <- table(dfagentury$target_class,dfagentury$launch_result_simple)
+
+knitr::kable(kontigecni_tabulka, caption = "Kontingenční tabulka: Typ mise vs Výsledek startu")
+```
+
+```{r}
+relativni_tab <- prop.table(kontigecni_tabulka,margin=1)
+
+knitr::kable(round(relativni_tab, 3), caption = "Relativní četnosti podle typu mise")
+```
+
+```{r}
+ggplot(dfagentury, aes(x = target_class, fill = launch_result_simple)) +
+  geom_bar(position = "fill") +
+  theme_minimal() +
+  labs(
+    title = "Podíl výsledků startu podle typu mise",
+    x = "Typ mise",
+    y = "Proporce (1 = 100 %)",
+    fill = "Výsledek startu"
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+vysledek_testu <- chisq.test(kontigecni_tabulka)
+
+
+vysledek_testu
+```
+
+
+
